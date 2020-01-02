@@ -103,7 +103,7 @@ public class ChatListener implements Listener {
             return;
         }
 
-        if(!addon.isRegisteredGameWorld(player.getWorld())) {
+        if(!addon.isRegisteredGameWorld(island.getWorld())) {
             return;
         }
 
