@@ -4,6 +4,7 @@ import world.bentobox.bentobox.api.configuration.ConfigComment;
 import world.bentobox.bentobox.api.configuration.ConfigEntry;
 import world.bentobox.bentobox.api.configuration.ConfigObject;
 import world.bentobox.bentobox.api.configuration.StoreAt;
+import world.bentobox.bentobox.managers.RanksManager;
 
 import java.util.Arrays;
 import java.util.List;
@@ -18,6 +19,14 @@ public class Settings implements ConfigObject {
 
     @ConfigEntry(path = "team-chat.gamemodes")
     private List<String> teamChatGamemodes = Arrays.asList("BSkyBlock", "AcidIsland", "CaveBlock", "SkyGrid");
+
+    @ConfigComment("Default gamemode world used in non BentoBox worlds, empty to disable.")
+    @ConfigEntry(path = "team-chat.default-world")
+    private String teamChatDefaultWorld = "";
+
+    @ConfigComment("Minimum rank for team chat.")
+    @ConfigEntry(path = "team-chat.minimum-rank")
+    private int teamChatMinimumRank = RanksManager.MEMBER_RANK;
 
     @ConfigComment("Log team chats to console.")
     @ConfigEntry(path = "team-chat.log")
@@ -39,6 +48,22 @@ public class Settings implements ConfigObject {
 
     public void setTeamChatGamemodes(List<String> teamChatGamemodes) {
         this.teamChatGamemodes = teamChatGamemodes;
+    }
+
+    public String getTeamChatDefaultWorld() {
+        return teamChatDefaultWorld;
+    }
+
+    public void setTeamChatDefaultWorld(String teamChatDefaultWorld) {
+        this.teamChatDefaultWorld = teamChatDefaultWorld;
+    }
+
+    public int getTeamChatMinimumRank() {
+        return teamChatMinimumRank;
+    }
+
+    public void setTeamChatMinimumRank(int teamChatMinimumRank) {
+        this.teamChatMinimumRank = teamChatMinimumRank;
     }
 
     public List<String> getIslandChatGamemodes() {

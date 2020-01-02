@@ -44,15 +44,11 @@ public class ChatListener implements Listener {
     public void onChat(final AsyncPlayerChatEvent e) {
         Player p = e.getPlayer();
         World w = e.getPlayer().getWorld();
-        // Check world
-        if (!addon.isRegisteredGameWorld(w)) {
-            return;
-        }
-        if (teamChatUsers.contains(p.getUniqueId()) && addon.getIslands().inTeam(w, p.getUniqueId())) {
+        if (teamChatUsers.contains(p.getUniqueId()) && addon.inTeam(w, p.getUniqueId())) {
             // Cancel the event
             e.setCancelled(true);
             if (e.isAsynchronous()) {
-                Bukkit.getScheduler().runTask(addon.getPlugin(), () -> teamChat(p,e.getMessage()));
+                Bukkit.getScheduler().runTask(addon.getPlugin(), () -> teamChat(p, e.getMessage()));
             } else {
                 teamChat(p, e.getMessage());
             }
@@ -69,43 +65,67 @@ public class ChatListener implements Listener {
     }
 
     private void islandChat(Island i, Player player, String message) {
+        if(!addon.isRegisteredGameWorld(player.getWorld())) {
+            return;
+        }
+
+        // Log if required
+        if (addon.getSettings().isLogTeamChats()) {
+            addon.log("[Team Chat Log] " + player.getName() + ": " + message);
+        }
+
+        // Spy if required
+        Bukkit.getOnlinePlayers().stream()
+                .filter(p -> spies.contains(p.getUniqueId()))
+                .map(User::getInstance)
+                .forEach(a -> a.sendMessage("chat.team-chat.spy-syntax", TextVariables.NAME, player.getName(), "[message]", message));
+
+        // Send message to island
         Bukkit.getOnlinePlayers().stream().map(User::getInstance)
-        .filter(u -> i.onIsland(u.getLocation()))
-        .forEach(u -> {
-            // Send message to island
-            u.sendMessage("chat.island-chat.syntax", TextVariables.NAME, player.getName(), "[message]", message);
-            // Log if required
-            if (addon.getSettings().isLogTeamChats()) {
-                addon.log("[Team Chat Log] " + player.getName() + ": " + message);
-            }
-            // Spy if required
-            Bukkit.getOnlinePlayers().stream()
-            .filter(p -> spies.contains(p.getUniqueId()))
-            .map(User::getInstance)
-            .forEach(a -> a.sendMessage("chat.team-chat.spy-syntax", TextVariables.NAME, player.getName(), "[message]", message));
-        });
+                .filter(u -> i.onIsland(u.getLocation()))
+                .forEach(u -> u.sendMessage("chat.island-chat.syntax", TextVariables.NAME, player.getName(), "[message]", message));
     }
 
     private void teamChat(final Player player, String message) {
         // Get island members
-        addon.getIslands().getIsland(player.getWorld(), player.getUniqueId()).getMembers().keySet().stream()
-        // Map to users
-        .map(User::getInstance)
-        // Filter for online only
-        .filter(User::isOnline)
-        // Send the message to them
-        .forEach(target -> {
-            target.sendMessage("chat.team-chat.syntax", TextVariables.NAME, player.getName(), "[message]", message);
-            // Log if required
-            if (addon.getSettings().isLogTeamChats()) {
-                addon.log("[Team Chat Log] " + player.getName() + ": " + message);
+        Island island = addon.getIslands().getIsland(player.getWorld(), player.getUniqueId());
+        if(island == null) {
+            if(addon.getSettings().getTeamChatDefaultWorld().isEmpty()) {
+                return;
             }
-            // Spy if required
-            Bukkit.getOnlinePlayers().stream()
-            .filter(p -> islandSpies.contains(p.getUniqueId()))
-            .map(User::getInstance)
-            .forEach(u -> u.sendMessage("chat.team-chat.spy-syntax", TextVariables.NAME, player.getName(), "[message]", message));
-        });
+            World defaultWorld = Bukkit.getWorld(addon.getSettings().getTeamChatDefaultWorld());
+            if(defaultWorld == null) {
+                return;
+            }
+            island = addon.getIslands().getIsland(defaultWorld, player.getUniqueId());
+        }
+        if(island == null) {
+            return;
+        }
+
+        if(!addon.isRegisteredGameWorld(player.getWorld())) {
+            return;
+        }
+
+        // Log if required
+        if (addon.getSettings().isLogTeamChats()) {
+            addon.log("[Team Chat Log] " + player.getName() + ": " + message);
+        }
+
+        // Spy if required
+        Bukkit.getOnlinePlayers().stream()
+                .filter(p -> islandSpies.contains(p.getUniqueId()))
+                .map(User::getInstance)
+                .forEach(u -> u.sendMessage("chat.team-chat.spy-syntax", TextVariables.NAME, player.getName(), "[message]", message));
+
+        // Send message to team members
+        island.getMemberSet(addon.getSettings().getTeamChatMinimumRank()).stream()
+                // Map to users
+                .map(User::getInstance)
+                // Filter for online only
+                .filter(User::isOnline)
+                // Send the message to them
+                .forEach(target -> target.sendMessage("chat.team-chat.syntax", TextVariables.NAME, player.getName(), "[message]", message));
     }
 
     /**

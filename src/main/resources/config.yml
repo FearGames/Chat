@@ -5,6 +5,10 @@ team-chat:
   - AcidIsland
   - CaveBlock
   - SkyGrid
+  # Default gamemode world used in non BentoBox worlds, empty to disable.
+  default-world: ''
+  # Minimum rank for team chat.
+  minimum-rank: 500
   # Log team chats to console.
   log: false
 island-chat:

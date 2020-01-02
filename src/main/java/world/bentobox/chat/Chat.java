@@ -2,6 +2,7 @@ package world.bentobox.chat;
 
 import java.util.HashSet;
 import java.util.Set;
+import java.util.UUID;
 
 import org.bukkit.World;
 
@@ -78,9 +79,15 @@ public class Chat extends Addon {
      * @return true if chat is active in this world
      */
     public boolean isRegisteredGameWorld(World world) {
-        return registeredGameModes.parallelStream().anyMatch(gmw -> gmw.inWorld(world));
+        return registeredGameModes.stream().anyMatch(gmw -> gmw.inWorld(world));
     }
 
+    public boolean inTeam(World world, UUID playerUniqueId) {
+        if(getIslands().inTeam(world, playerUniqueId)) {
+            return true;
+        }
+        return !settings.getTeamChatDefaultWorld().isEmpty();
+    }
 
     /**
      * Loads the Settings from the config.
